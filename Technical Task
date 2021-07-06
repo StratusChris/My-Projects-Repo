@@ -1,0 +1,161 @@
+provider "aws" {
+    region = "us-east-1"
+access_key = "AKIAQHTVRQ2QDHIGT6M2"
+secret_key = "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"
+  }
+
+resource "aws_s3_bucket" "technical-task" {
+  bucket = "interview-project"
+  acl    = "public-read"
+     
+     website {
+    index_document = "index.html"
+     
+     }
+   }
+
+   resource "aws_s3_bucket_object" "index" {
+  bucket = "interview-project"
+  key    = "index.html"
+  source = "html/index.html"
+  acl    = "public-read"
+}
+ resource "aws_s3_bucket_object" "error" {
+  bucket = "interview-project"
+  key    = "error.html"
+  source = "html/error.html"
+  acl    = "public-read"
+}
+resource "aws_cloudfront_distribution" "technical-task" {
+  origin {
+    domain_name = "aws_s3_bucket.interview-project.bucket.s3.amazonaws.com"
+    origin_id   = "website"
+
+  }
+  
+   enabled  = true
+   is_ipv6_enabled = true
+
+ 
+   default_root_object = "index.html"
+
+   default_cache_behavior {
+    allowed_methods = [
+      "HEAD",
+      "GET"
+    ]
+    cached_methods = [
+      "HEAD",
+      "GET"
+    ]
+    forwarded_values {
+      query_string = false
+      cookies {
+        forward = "none"
+      }
+    }
+    default_ttl = 0
+    max_ttl     = 0
+    min_ttl     = 0
+    target_origin_id = "website"
+    viewer_protocol_policy = "redirect-to-https"
+    compress = true
+  }
+   
+  ordered_cache_behavior {
+    path_pattern     = "/content/immutable/*"
+    allowed_methods = ["HEAD", "GET"]
+    cached_methods = ["HEAD", "GET"]
+  
+    forwarded_values {
+      cookies {
+        forward = "none"
+      }
+      query_string = false
+    }
+    default_ttl            = 1800
+    max_ttl                = 1800
+    min_ttl                = 1800
+    target_origin_id       = "website"
+    viewer_protocol_policy = "redirect-to-https"
+    compress               = true
+  }
+
+  viewer_certificate {
+   cloudfront_default_certificate = true 
+  }
+
+  restrictions {
+       geo_restriction {
+         restriction_type = "none"
+       }
+     }
+
+}
+
+resource  "aws_codepipeline" "technical-task-pipeline" {
+  name  = "tt-code-pipeline"
+  role_arn = "$(aws_iam_role.codepipeline_role.arn)"
+
+artifact_store {
+    location = "aws_s3_bucket.codepipeline_bucket.interview-project"
+    type     = "S3"
+ 
+ 
+    encryption_key {
+      id   = "data.aws_kms_alias.s3kmskey.arn"
+      type = "KMS"
+    }
+  }
+ 
+  stage {
+    name = "Source"
+
+    action {
+      name             = "Source"
+      category         = "Source"
+      owner            = "AWS"
+      provider         = "Github"
+      version          = "2"
+      output_artifacts = ["source_output"]
+
+      configuration = {
+        ConnectionArn    = "aws_codestarconnections_connection.example.arn"
+        FullRepositoryId = "Philtin/interview-project"
+        BranchName       = "main"
+      }
+    }
+  } 
+
+   stage {
+    name = "Deploy"
+
+    action {
+      name            = "Deploy"
+      category        = "Deploy"
+      owner           = "AWS"
+      provider        = "S3"
+      version         = "1"
+      input_artifacts = ["source_output"]
+      
+
+      configuration = {
+        ActionMode     = "REPLACE_ON_FAILURE"
+        Capabilities   = "CAPABILITY_AUTO_EXPAND,CAPABILITY_IAM"
+        
+      }
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
