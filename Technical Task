@@ -1,7 +1,7 @@
 provider "aws" {
     region = "us-east-1"
-access_key = "AKIAQHTVRQ2QDHIGT6M2"
-secret_key = "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"
+access_key = ""
+secret_key = ""
   }
 
 resource "aws_s3_bucket" "technical-task" {
