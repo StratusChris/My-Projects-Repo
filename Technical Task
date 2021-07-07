@@ -115,47 +115,88 @@ artifact_store {
       name             = "Source"
       category         = "Source"
       owner            = "AWS"
-      provider         = "Github"
-      version          = "2"
+      provider         = "CodeStarSourceConnection"
+      version          = "1"
       output_artifacts = ["source_output"]
 
       configuration = {
-        ConnectionArn    = "aws_codestarconnections_connection.example.arn"
-        FullRepositoryId = "Philtin/interview-project"
+        ConnectionArn    = "arn:aws:codestar-connections:us-east-2:016352642720:connection/4ffe7b3e-219b-4089-8400-ea3342378e45"
+        FullRepositoryId = "my-organization/example"
         BranchName       = "main"
       }
     }
-  } 
+  }
 
-   stage {
+ stage {
     name = "Deploy"
 
     action {
       name            = "Deploy"
       category        = "Deploy"
       owner           = "AWS"
-      provider        = "S3"
+      provider        = "CloudFormation"
+      input_artifacts = ["build_output"] 
       version         = "1"
-      input_artifacts = ["source_output"]
-      
 
       configuration = {
         ActionMode     = "REPLACE_ON_FAILURE"
         Capabilities   = "CAPABILITY_AUTO_EXPAND,CAPABILITY_IAM"
-        
+        OutputFileName = "CreateStackOutput.json"
+        StackName      = "MyStack"
+        TemplatePath   = "build_output::sam-templated.yaml"
       }
     }
   }
 }
 
+resource "aws_codestarconnections_connection" "interview-project" {
+  name          = "index.html"
+  provider_type = "GitHub"
+}
 
+resource "aws_iam_role" "codepipeline_role" {
+  name = "test-role"
 
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "codepipeline.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
 
+}
 
+resource "aws_iam_role_policy" "codepipeline_policy" {
+  name = "codepipeline_policy"
+  role = "aws_iam_role.codepipeline_role.id"
 
-
-
-
-
-
-
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect":"Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:GetObjectVersion",
+        "s3:GetBucketVersioning",
+        "s3:PutObjectAcl",
+        "s3:PutObject"
+      ],
+      "Resource": [
+        "${aws_s3_bucket.codepipeline_interview-project.aws:codestar-connections:us-east-2:016352642720:connection/4ffe7b3e-219b-4089-8400-ea3342378e45}",
+        "${aws_s3_bucket.codepipeline_interview-project.aws:codestar-connections:us-east-2:016352642720:connection/4ffe7b3e-219b-4089-8400-ea3342378e45}/*"
+        ]
+    }
+    {
+      "Effect": "Allow",
+      "Action": [
+        "codestar-connections:UseConnection" 
+      ]
+}
