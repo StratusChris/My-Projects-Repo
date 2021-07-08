@@ -1,34 +1,35 @@
-provider "aws" {
-    region = "us-east-1"
+provider "aws" { 
+    region = "us-east-2"
 access_key = ""
 secret_key = ""
   }
 
-resource "aws_s3_bucket" "technical-task" {
-  bucket = "interview-project"
+resource "aws_s3_bucket" "s3_bucket" {
+  bucket = "newtechnicaltask"  
   acl    = "public-read"
      
      website {
-    index_document = "index.html"
-     
+    index_document = "index.html" 
      }
-   }
+   } 
 
-   resource "aws_s3_bucket_object" "index" {
-  bucket = "interview-project"
-  key    = "index.html"
-  source = "html/index.html"
-  acl    = "public-read"
-}
- resource "aws_s3_bucket_object" "error" {
-  bucket = "interview-project"
+resource "aws_s3_bucket_object" "index_object" {
+bucket = "newtechnicaltask"
+key    = "index.html"
+source = "html/index.html"
+acl    = "public-read"
+} 
+
+resource "aws_s3_bucket_object" "error_object" {
+  bucket = "newtechnicaltask"
   key    = "error.html"
   source = "html/error.html"
   acl    = "public-read"
-}
-resource "aws_cloudfront_distribution" "technical-task" {
+} 
+
+resource "aws_cloudfront_distribution" "cloudfront_distribution" {
   origin {
-    domain_name = "aws_s3_bucket.interview-project.bucket.s3.amazonaws.com"
+    domain_name = "aws_s3_bucket.newtechnicaltask.bucket.s3.amazonaws.com"
     origin_id   = "website"
 
   }
@@ -93,90 +94,30 @@ resource "aws_cloudfront_distribution" "technical-task" {
 
 }
 
-resource  "aws_codepipeline" "technical-task-pipeline" {
-  name  = "tt-code-pipeline"
-  role_arn = "$(aws_iam_role.codepipeline_role.arn)"
+resource "aws_iam_role" "newtechnicaltask_codepipeline" { 
+  name = "newtechnicaltask_codepipeline"
 
-artifact_store {
-    location = "aws_s3_bucket.codepipeline_bucket.interview-project"
-    type     = "S3"
- 
- 
-    encryption_key {
-      id   = "data.aws_kms_alias.s3kmskey.arn"
-      type = "KMS"
-    }
-  }
- 
-  stage {
-    name = "Source"
-
-    action {
-      name             = "Source"
-      category         = "Source"
-      owner            = "AWS"
-      provider         = "CodeStarSourceConnection"
-      version          = "1"
-      output_artifacts = ["source_output"]
-
-      configuration = {
-        ConnectionArn    = "arn:aws:codestar-connections:us-east-2:016352642720:connection/4ffe7b3e-219b-4089-8400-ea3342378e45"
-        FullRepositoryId = "my-organization/example"
-        BranchName       = "main"
-      }
-    }
-  }
-
- stage {
-    name = "Deploy"
-
-    action {
-      name            = "Deploy"
-      category        = "Deploy"
-      owner           = "AWS"
-      provider        = "CloudFormation"
-      input_artifacts = ["build_output"] 
-      version         = "1"
-
-      configuration = {
-        ActionMode     = "REPLACE_ON_FAILURE"
-        Capabilities   = "CAPABILITY_AUTO_EXPAND,CAPABILITY_IAM"
-        OutputFileName = "CreateStackOutput.json"
-        StackName      = "MyStack"
-        TemplatePath   = "build_output::sam-templated.yaml"
-      }
-    }
-  }
-}
-
-resource "aws_codestarconnections_connection" "interview-project" {
-  name          = "index.html"
-  provider_type = "GitHub"
-}
-
-resource "aws_iam_role" "codepipeline_role" {
-  name = "test-role"
-
-  assume_role_policy = <<EOF
+  assume_role_policy = <<-EOF
 {
   "Version": "2012-10-17",
   "Statement": [
     {
       "Effect": "Allow",
       "Principal": {
-        "Service": "codepipeline.amazonaws.com"
+        "Service": "codepipeline.amazonaws.com" 
       },
       "Action": "sts:AssumeRole"
     }
   ]
 }
-
+EOF
 }
 
-resource "aws_iam_role_policy" "codepipeline_policy" {
+resource "aws_iam_role_policy" "codepipeline_policy" {  
   name = "codepipeline_policy"
-  role = "aws_iam_role.codepipeline_role.id"
-
+  role = aws_iam_role.newtechnicaltask_codepipeline.name
+  
+  policy = <<EOF
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -186,17 +127,16 @@ resource "aws_iam_role_policy" "codepipeline_policy" {
         "s3:GetObject",
         "s3:GetObjectVersion",
         "s3:GetBucketVersioning",
-        "s3:PutObjectAcl",
-        "s3:PutObject"
+        "s3:PutObjectAcl", 
+        "cloudfront:GetInvalidation", 
+        "s3:PutObject" 
       ],
-      "Resource": [
-        "${aws_s3_bucket.codepipeline_interview-project.aws:codestar-connections:us-east-2:016352642720:connection/4ffe7b3e-219b-4089-8400-ea3342378e45}",
-        "${aws_s3_bucket.codepipeline_interview-project.aws:codestar-connections:us-east-2:016352642720:connection/4ffe7b3e-219b-4089-8400-ea3342378e45}/*"
-        ]
-    }
-    {
-      "Effect": "Allow",
-      "Action": [
-        "codestar-connections:UseConnection" 
+      "Resource": [ 
+         "arn:aws:s3:::newtechnicaltask",
+         "arn:aws:s3:::newtechnicaltask/*"
       ]
+    }
+  ]
+}
+EOF
 }
