@@ -164,7 +164,7 @@ resource  "aws_codepipeline" "newtechnicaltask_pipeline" {
 
       configuration = {
           Owner                = "Philtin"
-          OAuthToken           = "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"
+          OAuthToken           = ""
           FullRepositoryId     = "philtin/interview-project"
           Branch               = "main"
           PollForSourceChanges = "true"
