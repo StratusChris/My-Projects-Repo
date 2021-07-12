@@ -5,7 +5,7 @@ secret_key = ""
   }
 
 resource "aws_s3_bucket" "s3_bucket" {
-  bucket = "newtechnicaltask"  
+  bucket = "${lower(var.source_repo_github_owner)}-newtechnicaltask"
   acl    = "public-read"
      
      website {
@@ -14,14 +14,14 @@ resource "aws_s3_bucket" "s3_bucket" {
    } 
 
 resource "aws_s3_bucket_object" "index_object" {
-bucket = "newtechnicaltask"
+bucket = aws_s3_bucket.s3_bucket.id
 key    = "index.html"
 source = "html/index.html"
 acl    = "public-read"
 } 
 
 resource "aws_s3_bucket_object" "error_object" {
-  bucket = "newtechnicaltask"
+  bucket = aws_s3_bucket.s3_bucket.id
   key    = "error.html"
   source = "html/error.html"
   acl    = "public-read"
@@ -147,19 +147,19 @@ resource  "aws_codepipeline" "newtechnicaltask_pipeline" {
   
   
   artifact_store {
-    location = "newtechnicaltask" 
+    location = aws_s3_bucket.s3_bucket.id
     type     = "S3"
-  } 
- 
+  }
+
   stage {
-    name = "Source" 
+    name = "Source"
 
     action {
       name             = "Source"
       category         = "Source"
       owner            = "ThirdParty"
       provider         = "Github"
-      version          = "2" 
+      version          = "2"
       output_artifacts = ["SourceArtifacts"]
 
       configuration = {
@@ -184,7 +184,7 @@ resource  "aws_codepipeline" "newtechnicaltask_pipeline" {
       version         = "1"
 
       configuration = {
-           BucketName = "newechnicaltask"
+           BucketName = aws_s3_bucket.s3_bucket.id
               Extract =  "true"
         
    }
