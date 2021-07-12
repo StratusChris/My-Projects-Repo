@@ -1,4 +1,4 @@
-provider "aws" { 
+provider "aws" {
     region = "us-east-2"
 access_key = ""
 secret_key = ""
@@ -163,9 +163,9 @@ resource  "aws_codepipeline" "newtechnicaltask_pipeline" {
       output_artifacts = ["SourceArtifacts"]
 
       configuration = {
-          Owner                = "Philtin"
+          Owner                = "${var.source_repo_github_owner}"
           OAuthToken           = ""
-          FullRepositoryId     = "philtin/interview-project"
+          FullRepositoryId     = "${var.source_repo_github_owner}/${var.source_repo_github}"
           Branch               = "main"
           PollForSourceChanges = "true"
       }
@@ -213,7 +213,7 @@ filter {
 }
 
 resource "github_repository_webhook" "newtechnicaltask_pipeline" { 
-  repository ="/Philtin/interview-project"
+  repository ="/${var.source_repo_github_owner}/${var.source_repo_github}"
  
 
    configuration {
