@@ -200,7 +200,7 @@ resource "aws_codepipeline_webhook" "newtechnicaltask_pipeline" {
   name = "newtechnicaltask_pipeline" 
   authentication = "GITHUB_HMAC"
   target_action = "Source"
-  target_pipeline = "aws_codepipeline.newtechnicaltask_pipeline"
+  target_pipeline = aws_codepipeline.newtechnicaltask_pipeline.name
 
 authentication_configuration {
   secret_token = local.webhook_secret
