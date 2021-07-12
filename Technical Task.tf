@@ -143,7 +143,7 @@ EOF
 
 resource  "aws_codepipeline" "newtechnicaltask_pipeline" { 
   name  = "newtechnicaltask_pipeline" 
-  role_arn = "arn:aws:iam::016352642720:role/newtechnicaltask_codepipeline" 
+  role_arn = aws_iam_role.newtechnicaltask_codepipeline.arn
   
   
   artifact_store {
@@ -163,7 +163,7 @@ resource  "aws_codepipeline" "newtechnicaltask_pipeline" {
       output_artifacts = ["SourceArtifacts"]
 
       configuration = {
-          Owner                = "${var.source_repo_github_owner}"
+          Owner                = var.source_repo_github_owner
           OAuthToken           = ""
           FullRepositoryId     = "${var.source_repo_github_owner}/${var.source_repo_github}"
           Branch               = "main"
